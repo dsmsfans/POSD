@@ -4,9 +4,9 @@ all: hw1
 
 hw1: main.o Shapes.o Media.o Sort.o
 ifeq (${OS}, Windows_NT)
-	g++ -o utSort main.o Shapes.o Media.o Sort.o -lgtest
+	g++ -o hw1 main.o Shapes.o Media.o Sort.o -lgtest
 else
-	g++ -o utSort main.o Shapes.o Media.o Sort.o -lgtest -pthread
+	g++ -o hw1 main.o Shapes.o Media.o Sort.o -lgtest -pthread
 endif
 	
 main.o: main.cpp utSort.h 
@@ -22,5 +22,5 @@ clean:
 ifeq (${OS}, Windows_NT)
 	del *.o *.exe
 else
-	rm -f *.o utSort
+	rm -f *.o hw1
 endif
