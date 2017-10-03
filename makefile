@@ -1,13 +1,26 @@
-all: hw2
+INC_DIR = include
 
-hw2: utTerm
+all: hw1
 
-utTerm: mainTerm.o
-	g++ -o utTerm mainTerm.o -lgtest -lpthread
-mainTerm.o: Interface.h mainTerm.cpp utTerm.h Number.h Atom.h Variable.h
-	g++ -std=c++11 -c mainTerm.cpp
+hw1: main.o Shapes.o Media.o Sort.o
+ifeq (${OS}, Windows_NT)
+	g++ -o hw1 main.o Shapes.o Media.o Sort.o -lgtest
+else
+	g++ -o hw1 main.o Shapes.o Media.o Sort.o -lgtest -pthread
+endif
+	
+main.o: main.cpp utSort.h 
+	g++ -std=gnu++0x -c main.cpp
+Shapes.o: $(INC_DIR)/Shapes.h Shapes.cpp 
+	g++ -std=gnu++0x -c Shapes.cpp
+Media.o: $(INC_DIR)/Media.h Media.cpp
+	g++ -std=gnu++0x -c Media.cpp
+Sort.o: $(INC_DIR)/Sort.h Sort.cpp
+	g++ -std=gnu++0x -c Sort.cpp
 
-clean:
-	rm -f *.o utTerm
-stat:
-	wc *.h *.cpp
+clean:	
+ifeq (${OS}, Windows_NT)
+	del *.o *.exe
+else
+	rm -f *.o hw1
+endif
