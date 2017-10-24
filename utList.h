@@ -151,6 +151,7 @@ TEST(List, matchToSameListWithDiffVarNameShouldSucceed)
   List l1(args1);
   List l2(args2);
   EXPECT_TRUE(l1.match(l2));
+  EXPECT_TRUE(l2.match(l1));
 }
 
 // ?- [496, X, terence_tao] = [496, 8128, terence_tao].
@@ -167,6 +168,7 @@ TEST(List, matchToVarToAtominListShouldSucceed)
   List l2(args2);
   l1.match(l2);
   EXPECT_EQ("8128",X.value());
+  EXPECT_TRUE(l2.match(l1));
 }
 
 // ?- Y = [496, X, terence_tao], X = alan_mathison_turing.

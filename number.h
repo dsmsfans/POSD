@@ -39,7 +39,7 @@ public:
         variable->setvalue(this);
         return true;
       }
-      return symbol() == variable->symbol();
+      return symbol() == variable->value();
     }
     return std::to_string(_symbol) == term.symbol();
   }
