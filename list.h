@@ -54,11 +54,20 @@ public:
     List * ps = dynamic_cast<List *>(&term);
     if (ps)
     {
-
       if(_elements.size()!= ps->_elements.size())
       {
         return false;
-
+      }
+      Variable * variable;
+      if(term.isVariable())
+      {
+        variable = dynamic_cast<Variable *>(&term);
+        if(variable->assignable())
+        {
+          variable->setvalue(this);
+          return true;
+        }
+        return symbol() == variable->symbol();
       }
       for(int i=0;i<_elements.size();i++)
       {
@@ -71,6 +80,23 @@ public:
       return true;
     }
     return false;
+  }
+
+  bool match(Variable &variable)
+  {
+    for(int i = 0;i < _elements.size();i++)
+    {
+      if(&variable == _elements[i])
+      {
+        return false;
+      }
+    }
+    if(variable.assignable())
+    {
+      variable.setvalue(this);
+      return true;
+    }
+    return symbol() == variable.value();
   }
 
 public:
