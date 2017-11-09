@@ -87,6 +87,16 @@ public:
     }
     return symbol() == variable.value();
   }
+  bool isRecurrsiveMatch(Term *term)
+  {
+    for (int i = 0; i < _elements.size(); i++)
+    {
+      if (term == _elements[i])
+      {
+        return true;
+      }
+    }
+  }
 
 public:
   Term * head()
@@ -101,7 +111,7 @@ public:
   {
     if(_elements.empty())
     {
-      throw string("Accessing tail in an empty list");
+      throw string("Accessing head in an empty list");
     }
     vector<Term *> _tail;
     for(int i = 1;i < _elements.size();i++)

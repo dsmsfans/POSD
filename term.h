@@ -11,6 +11,7 @@ public:
   virtual string value(){return symbol();};
   virtual bool match(Term& term){return symbol() == term.value();};
   virtual bool isVariable(){return false;};
+  virtual bool isRecurrsiveMatch(Term * ){return false;};
 };
 
 #endif

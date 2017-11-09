@@ -263,11 +263,11 @@ TEST (List, emptyExecptionOfTail)
   List l(args);
   try
   {
-    l.tail();
+    l.head();
   }
   catch(string s)
   {
-    EXPECT_EQ("Accessing tail in an empty list",s);
+    EXPECT_EQ("Accessing head in an empty list",s);
   }
 }
 

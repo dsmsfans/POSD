@@ -13,6 +13,11 @@ class Struct:public Term
 public:
   Struct(Atom name, std::vector<Term *> args):_name(name), _args(args) {}
 
+  int arity()
+  {
+    return _args.size();
+  }
+
   Term * args(int index)
   {
     return _args[index];
@@ -25,6 +30,11 @@ public:
   string symbol()
   {
     string ret =_name.symbol() + "(";
+    if(arity() == 0)
+    {
+      ret += ")";
+      return ret;
+    }
     for(int i = 0; i < _args.size() - 1 ; i++)
     {
       ret += _args[i]-> symbol() + ", ";
@@ -35,6 +45,11 @@ public:
   string value()
   {
     string ret =_name.value() + "(";
+    if(arity() == 0)
+    {
+      ret += ")";
+      return ret;
+    }
     for(int i = 0; i < _args.size() - 1 ; i++)
     {
       ret += _args[i]-> value() + ", ";
@@ -60,6 +75,18 @@ public:
     }
     return false;
   }
+  bool match(Variable &variable)
+  {
+    if (variable.assignable())
+    {
+      variable.setvalue(this);
+      return true;
+    }
+    else
+    {
+      return symbol() == variable.value();
+    } 
+  } 
 private:
   Atom _name;
   std::vector<Term *> _args;
