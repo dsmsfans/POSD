@@ -30,6 +30,10 @@ public:
 
   bool match(Term& term)
   {
+    if(term.isContain(symbol()))
+    {
+      return false;
+    }
     if(&term == this)
     {
       return true;

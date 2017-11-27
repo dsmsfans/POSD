@@ -98,6 +98,26 @@ public:
     }
   }
 
+  bool isContain(string symbol)
+  {
+    for (int i = 0; i < _elements.size(); i++)
+    {
+      if (symbol == _elements[i]->symbol() || _elements[i]->isContain(symbol))
+      {
+        return true;
+      }
+    }
+  }
+
+  Term *find(string symbol)
+  {
+    for (int i = 0; i < _elements.size(); i++)
+    {
+      if (_elements[i]->find(symbol) != nullptr)
+        return _elements[i]->find(symbol);
+    }
+  }
+
 public:
   Term * head()
   {

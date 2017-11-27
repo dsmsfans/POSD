@@ -152,11 +152,15 @@ TEST (Variable, Struct2)
   EXPECT_EQ(Y.value(),"s(teddy)");
 }
 
-TEST (Variable, Atov)
+
+TEST (Variable, num1_to_varY_and_varX_match_varY1111)
 {
   Variable X("X");
-  Atom tom("tom");
-  EXPECT_TRUE(tom.match(X));
-
+  Variable Y("Y");
+  Number n(1);
+  Y.match(n);
+  Y.match(X);
+  EXPECT_EQ(X.value(),"1");
 }
+
 #endif

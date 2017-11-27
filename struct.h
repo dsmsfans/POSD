@@ -87,6 +87,27 @@ public:
       return symbol() == variable.value();
     } 
   } 
+
+  bool isContain(string symbol)
+  {
+    for (int i = 0; i < _args.size(); i++)
+    {
+      if (symbol == _args[i]->symbol() || _args[i]->isContain(symbol))
+      {
+        return true;
+      }
+    }
+  }
+  
+  Term *find(string symbol)
+  {
+    for (int i = 0; i < _args.size(); i++)
+    {
+      if (_args[i]->find(symbol) != nullptr)
+        return _args[i]->find(symbol);
+    }
+  }
+
 private:
   Atom _name;
   std::vector<Term *> _args;
