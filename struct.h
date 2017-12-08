@@ -8,6 +8,14 @@
 
 using std::string;
 
+
+template <class T>
+class Iterator;
+template <class T>
+class DFSIterator;
+template <class T>
+class BFSIterator;
+
 class Struct:public Term
 {
 public:
@@ -107,6 +115,10 @@ public:
         return _args[i]->find(symbol);
     }
   }
+  
+  Iterator <Term*>* createIterator();
+  Iterator <Term*>* createDFSIterator();
+  Iterator <Term*>* createBFSIterator();
 
 private:
   Atom _name;

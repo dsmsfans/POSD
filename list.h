@@ -9,6 +9,13 @@
 using std::string;
 using std::vector;
 
+template <class T>
+class Iterator;
+template <class T>
+class DFSIterator;
+template <class T>
+class BFSIterator;
+
 class List : public Term {
 public:
   List (): _elements() {}
@@ -17,7 +24,14 @@ public:
   {
     return _elements[index];
   }
-
+  Term * args(int index) 
+  {
+	  return _elements[index];
+  }
+  int arity() 
+  {
+	  return _elements.size();
+  }
   string symbol()
   {
     if(_elements.empty())
@@ -117,6 +131,11 @@ public:
         return _elements[i]->find(symbol);
     }
   }
+  
+  Iterator <Term*>* createIterator();
+  Iterator <Term*>* createDFSIterator();
+  Iterator <Term*>* createBFSIterator();
+
 
 public:
   Term * head()
