@@ -1,194 +1,181 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include <gtest/gtest.h>
 #include <string>
-using std::string;
-
-#include "term.h"
+#include <vector>
+#include <stack>
 #include "atom.h"
-#include "variable.h"
-#include "global.h"
+#include "list.h"
 #include "number.h"
 #include "scanner.h"
 #include "struct.h"
-#include "list.h"
-#include "node.h"
-#include "utParser.h"
+#include "term.h"
+#include "variable.h"
+#include "exp.h"
+
+using std::stack;
+using std::string;
+using std::vector;
+
 
 class Parser
 {
 public:
-  Parser(Scanner scanner) : _scanner(scanner), _terms(),start(0){}
-  Term* createTerm()
+  Parser(Scanner scanner) : _scanner(scanner), _scopeStartIndex(0) {}
+
+  Term *createTerm()
   {
     int token = _scanner.nextToken();
     _currentToken = token;
-    if(token == VAR)
+    if (token == VAR)
     {
-      return new Variable(symtable[_scanner.tokenValue()].first);
+      for (int i = _scopeStartIndex; i < _varTable.size(); i++)
+        if (symtable[_scanner.tokenValue()].first == _varTable[i]->symbol())
+          return _varTable[i];
+      Variable *variable = new Variable(symtable[_scanner.tokenValue()].first);
+      _varTable.push_back(variable);
+      return variable;
     }
-    else if(token == NUMBER)
-    {
+    else if (token == NUMBER)
       return new Number(_scanner.tokenValue());
-    }
-    else if(token == ATOM || token == ATOMSC)
+    else if (token == ATOM || token == ATOMSC)
     {
-      Atom* atom = new Atom(symtable[_scanner.tokenValue()].first);
-      if(_scanner.currentChar() == '(' ) 
-      {
+      Atom *atom = new Atom(symtable[_scanner.tokenValue()].first);
+      if (_scanner.currentChar() == '(')
         return structure();
-      }
       else
-      {
         return atom;
-      }
     }
-    else if(token == '[')
-    {
+    else if (token == '[')
       return list();
-    }
-    return nullptr;
+    else
+      return nullptr;
   }
 
+  vector<Term *> &getTerms() { return _terms; }
 
+  Exp *buildExpression()
+  {
+    if (_scanner.getContext().find(";.") != string::npos)
+      throw string("Unexpected ';' before '.'");
+    if (_scanner.getContext().find(",.") != string::npos)
+      throw string("Unexpected ',' before '.'");
+    disjunctionMatch();
+    restDisjunctionMatch();
+    if (createTerm() != nullptr || _currentToken != '.')
+      throw string("Missing token '.'");
+    return _expStack.top();
+  }
 
-  Term * structure() 
+  Exp *getExpressionTree() { return _expStack.top(); }
+
+private:
+  void createTerms()
+  {
+    Term *term = createTerm();
+    if (term != nullptr)
+    {
+      _terms.push_back(term);
+      while ((_currentToken = _scanner.nextToken()) == ',')
+        _terms.push_back(createTerm());
+    }
+  }
+
+  Term *structure()
   {
     Atom structName = Atom(symtable[_scanner.tokenValue()].first);
     int startIndexOfStructArgs = _terms.size();
     _scanner.nextToken();
     createTerms();
-    if(_currentToken == ')')
+    if (_currentToken == ')')
     {
-      vector<Term *> args(_terms.begin() + startIndexOfStructArgs, _terms.end());
+      vector<Term *> args(_terms.begin() + startIndexOfStructArgs,
+                          _terms.end());
       _terms.erase(_terms.begin() + startIndexOfStructArgs, _terms.end());
       return new Struct(structName, args);
-    } 
-    else 
-    {
-      throw string("unexpected token");
     }
+    else if (_currentToken == ';')
+      throw string("Unbalanced operator");
+    else
+      throw string("unexpected token");
   }
 
-  Term * list() 
+  Term *list()
   {
     int startIndexOfListArgs = _terms.size();
     createTerms();
-    if(_currentToken == ']')
+    if (_currentToken == ']')
     {
       vector<Term *> args(_terms.begin() + startIndexOfListArgs, _terms.end());
       _terms.erase(_terms.begin() + startIndexOfListArgs, _terms.end());
       return new List(args);
-    } 
-    else 
-    {
+    }
+    else if (_currentToken == ';')
+      throw string("Unbalanced operator");
+    else
       throw string("unexpected token");
-    }
   }
 
-  Term * matchings()
+  void restDisjunctionMatch()
   {
-    Term* term = createTerm();
-    if(term!=nullptr)
+    if (_scanner.currentChar() == ';')
     {
-      _terms.push_back(term);
-      while((_currentToken = _scanner.nextToken()) != EOS) 
-      {
-        if(_currentToken == '=')
-        {
-          Node *l = new Node(TERM,_terms.back());
-          _terms.push_back(createTerm());
-          Node *r = new Node(TERM,_terms.back());
-          _expressionTree = new Node(EQUALITY,0,l,r);
-        }
-        if(_currentToken == ',')
-        {
-          Node *l = _expressionTree;
-          matchings();
-          Node *r = _expressionTree;
-          _expressionTree = new Node(COMMA,0,l,r);
-          setstart();
-        }
-        if(_currentToken == ';')
-        {
-          Node *l = _expressionTree;
-          start = _terms.size();
-          matchings();
-          Node *r = _expressionTree;
-          _expressionTree = new Node(SEMICOLON,0,l,r);
-        }
-        
-      }
+      _scopeStartIndex = _varTable.size();
+      createTerm();
+      disjunctionMatch();
+      Exp *right = _expStack.top();
+      _expStack.pop();
+      Exp *left = _expStack.top();
+      _expStack.pop();
+      _expStack.push(new DisjExp(left, right));
+      restDisjunctionMatch();
     }
-    if(symtable.back().first == ".")
+  }
+
+  void disjunctionMatch()
+  {
+    conjunctionMatch();
+    restConjunctionMatch();
+  }
+
+  void restConjunctionMatch()
+  {
+    if (_scanner.currentChar() == ',')
     {
-      symtable.pop_back();
+      createTerm();
+      conjunctionMatch();
+      Exp *right = _expStack.top();
+      _expStack.pop();
+      Exp *left = _expStack.top();
+      _expStack.pop();
+      _expStack.push(new ConjExp(left, right));
+      restConjunctionMatch();
     }
-    
   }
 
-  Node * expressionTree()
+  void conjunctionMatch()
   {
-    return _expressionTree;
-  }
-
-  vector<Term *> & getTerms() 
-  {
-    return _terms;
-  }
-
-  void setstart()
-  {
-    for(int i = start;i < _terms.size();i++)
+    Term *left = createTerm();
+    if (createTerm() == nullptr && _currentToken == '=')
     {
-      Variable *currentVar = dynamic_cast<Variable *>(_terms[i]);
-      if(currentVar != nullptr)
-      {
-        for(int j = start;j < _terms.size();j++)
-        {
-          Struct *currentStruct = dynamic_cast<Struct *>(_terms[j]);
-          List *currentList = dynamic_cast<List *>(_terms[j]);
-          if(currentStruct != nullptr && currentStruct->isContain(currentVar->symbol()))
-          {
-            currentVar->match(*(currentStruct->find(currentVar->symbol())));
-          }
-          else if(currentList != nullptr && currentList->isContain(currentVar->symbol()))
-          {
-            currentVar->match(*(currentList->find(currentVar->symbol())));
-          }
-          else if(currentVar->symbol() == _terms[j]->symbol() && j > i)
-          {
-            currentVar->match(*(_terms[j]));
-          }
-        }
-      }
+      Term *right = createTerm();
+      _expStack.push(new MatchExp(left, right));
     }
+    else
+      throw string(left->symbol() + " does never get assignment");
   }
 
-private:
-  FRIEND_TEST(ParserTest, createArgs);
-  FRIEND_TEST(ParserTest,ListOfTermsEmpty);
-  FRIEND_TEST(ParserTest,listofTermsTwoNumber);
-  FRIEND_TEST(ParserTest, createTerm_nestedStruct3);
-  //FRIEND_TEST(ParserTest, TwoTermsMatching);
-
-  void createTerms() 
-  {
-    Term* term = createTerm();
-    if(term!=nullptr)
-    {
-      _terms.push_back(term);
-      while((_currentToken = _scanner.nextToken()) == ',') 
-      {
-        _terms.push_back(createTerm());
-      }
-    }
-  }
-
-  vector<Term *> _terms;
   Scanner _scanner;
   int _currentToken;
-  int start;
-  Node * _expressionTree;
+  vector<Term *> _terms;
+  vector<Variable *> _varTable;
+  int _scopeStartIndex;
+  stack<Exp *> _expStack;
+
+  FRIEND_TEST(ParserTest, createArgs);
+  FRIEND_TEST(ParserTest, ListOfTermsEmpty);
+  FRIEND_TEST(ParserTest, listofTermsTwoNumber);
+  FRIEND_TEST(ParserTest, createTerm_nestedStruct3);
 };
 #endif

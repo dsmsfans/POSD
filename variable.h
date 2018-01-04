@@ -3,53 +3,45 @@
 
 #include <string>
 #include "term.h"
-
 using std::string;
 
 class Variable : public Term
 {
 public:
-  Variable (string s):_symbol(s),_value(NULL){}
-  string symbol()
+  Variable(string s) : Term(s), _value(nullptr) {}
+  string value() const
   {
-    return _symbol;
-  }
-  string value()
-  {
-    if(!_value)
-    {
-      return _symbol;
-    }
-    return _value->value();
+    if (!_value)
+      return symbol();
+    else
+      return _value->value();
   }
 
-  bool isVariable()
-  {
-    return true;
-  }
+  bool isAssignable() { return !_value; }
 
-  bool match(Term& term)
+  bool match(Term &term)
   {
-    if(term.isContain(symbol()))
-    {
+    if (term.findBySymbol(symbol()) != nullptr &&
+        term.findBySymbol(symbol()) != &term)
       return false;
-    }
-    if(&term == this)
+    else if (&term == this)
+      return true;
+    else if (!_value)
     {
+      _value = &term;
       return true;
     }
-    if(_value)
+    else
     {
-      return _value->match(term);
+      if (term.isAssignable())
+        return term.match(*this);
+      else
+        return _value->match(term);
     }
-    _value = &term;
-    return true;
   }
 
-  bool assignable(){return !_value;}
-  void setvalue(Term *term){ _value = term;}
-  string _symbol;
-  Term * _value;
+private:
+  Term *_value;
 };
 
 #endif

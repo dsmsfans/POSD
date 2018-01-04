@@ -1,7 +1,7 @@
 #ifndef TERM_H
 #define TERM_H
 
-#include<string>
+#include <string>
 using std::string;
 
 template <class T>
@@ -14,27 +14,33 @@ class BFSIterator;
 class Term
 {
 public:
-  virtual string symbol() = 0;
-  virtual string value(){return symbol();};
-  virtual bool match(Term& term){return symbol() == term.value();};
-  virtual bool isVariable(){return false;};
-  virtual bool isContain(string symbol){return false;};
-  
-  virtual Term *find(string symbol)
+  virtual string symbol() const { return _symbol; }
+  virtual string value() const { return symbol(); }
+  virtual bool isAssignable() { return false; }
+
+  virtual bool match(Term &term)
   {
-    if(symbol == this->symbol())
-    {
+    if (term.isAssignable())
+      return term.match(*this);
+    else
+      return symbol() == term.value();
+  }
+
+  virtual Term *findBySymbol(string symbol)
+  {
+    if (symbol == this->symbol())
       return this;
-    }
-    return nullptr;
-  };
+    else
+      return nullptr;
+  }
 
   virtual Iterator<Term *> *createIterator();
   virtual Iterator<Term *> *createDFSIterator();
   virtual Iterator<Term *> *createBFSIterator();
-  
-  
-  
+
+protected:
+  Term(string s) : _symbol(s) {}
+  string _symbol;
 };
 
 #endif
